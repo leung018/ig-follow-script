@@ -10,17 +10,56 @@ const igInstance = axios.create({
 });
 
 const getFriendShipId = async (igId) => {
-    const response = await igInstance.request({
-        url: igId.trim(),
-        method: 'get',
-        params: {
-            "__a": '1'
-        }
-    })
+    try {
+        const response = await igInstance.request({
+            url: igId.trim(),
+            method: 'get',
+            params: {
+                "__a": '1'
+            }
+        })
 
-    if (response.status != 200) {
-        throw `Strange Response from ${igId}: ` + response
+        return response.data.graphql.user.id;
+    } catch (err) {
+        errorLogging("Error when getting friendship of " + igId, err);
+        throw "Unsuccess of Getting friendship of " + igId;
+    }
+    
+}
+
+const followIg = async (friendshipId) => {
+    try {
+        const response = await igInstance.post("web/friendships/" + friendshipId.trim() + "/follow");
+
+        if (response.result == "following" && response.status == "ok") {
+            return true;
+        } else {
+            console.log(friendshipId + "'s follow response normal but result is not following");
+            return false;
+        }
+    } catch (err) {
+        errorLogging("Error when following friendship of " +  friendshipId, err);
+        return false;
     }
 
-    return response.data.graphql.user.id;
 }
+
+
+  const errorLogging = (logLabel, error) => {
+    if (error.response) {
+      // The request was made and the server responded with a status code
+      // that falls out of the range of 2xx
+      console.log(logLabel, error.response.data);
+      console.log(logLabel, error.response.status);
+      console.log(logLabel, error.response.headers);
+    } else if (error.request) {
+      // The request was made but no response was received
+      // `error.request` is an instance of XMLHttpRequest in the browser and an instance of
+      // http.ClientRequest in node.js
+      console.log(logLabel, error.request);
+    } else {
+      // Something happened in setting up the request that triggered an Error
+      console.log(logLabel, error.message);
+    }
+    console.log(logLabel, error.config);
+  }
